@@ -54,6 +54,7 @@
     <div><b>Speed:</b> <span id="speed"></span> m/s</div>
     <div><b>Strength:</b> <span id="strength"></span> g</div>
     <div><b>Avg Accel:</b> <span id="accel"></span> g</div>
+    <div><b>Height:</b> <span id="max_height"></span> cm</div>
   </div>
 
   <script>
@@ -73,6 +74,8 @@
         document.getElementById("speed").textContent = data.speed;
         document.getElementById("strength").textContent = data.strength;
         document.getElementById("accel").textContent = data.accel;
+        document.getElementById("max_height").textContent = data.max_height;
+
         statusBox.style.display = "inline-block";
       } catch (err) {
         alert("❌ Error measuring throw");
@@ -102,4 +105,3 @@
   </script>
 </body>
 </html>
-
