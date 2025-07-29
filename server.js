@@ -24,7 +24,8 @@ async function sendToAO(throwData) {
     id = "${throwData.id}",
     speed = ${throwData.speed},
     strength = ${throwData.strength},
-    accel = ${throwData.accel}
+    accel = ${throwData.accel},
+    height = ${throwData.max_height}
   })`;
 
   const tags = [{ name: 'Action', value: 'Eval' }];
