@@ -62,9 +62,27 @@
     const uploadBtn = document.getElementById("upload-btn");
     const statusBox = document.getElementById("status");
 
+    function showCountdown(seconds = 3) {
+      return new Promise((resolve) => {
+        let remaining = seconds;
+        const originalText = throwBtn.textContent;
+
+        const interval = setInterval(() => {
+          throwBtn.textContent = `Get ready... ${remaining}`;
+          remaining--;
+
+          if (remaining < 0) {
+            clearInterval(interval);
+            throwBtn.textContent = "Measuring...";
+            resolve();
+          }
+        }, 1000);
+      });
+    }
+
     throwBtn.addEventListener("click", async () => {
       throwBtn.disabled = true;
-      throwBtn.textContent = "Measuring...";
+      await showCountdown(3); // Show 3-2-1 countdown
 
       try {
         const res = await fetch("/start-throw");
