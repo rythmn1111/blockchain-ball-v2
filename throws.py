@@ -1,60 +1,80 @@
-#!/usr/bin/env python3
-
-import smbus2
 import time
+import board
+import busio
 import json
-import math
 from datetime import datetime
+import smbus
+from adafruit_bme280 import basic as adafruit_bme280
 
-# MPU6050 Registers
+# === MPU6050 SETUP ===
 MPU_ADDR = 0x68
 PWR_MGMT_1 = 0x6B
 ACCEL_XOUT_H = 0x3B
 
-# Setup
-bus = smbus2.SMBus(1)
+bus = smbus.SMBus(1)
 bus.write_byte_data(MPU_ADDR, PWR_MGMT_1, 0)
 
-def read_word(reg):
-    high = bus.read_byte_data(MPU_ADDR, reg)
-    low = bus.read_byte_data(MPU_ADDR, reg + 1)
-    value = (high << 8) + low
-    if value > 32767:
-        value -= 65536
-    return value
+# === BME280 SETUP ===
+i2c_bmp = busio.I2C(board.SCL, board.SDA)
+bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c_bmp, address=0x76)
+bme280.sea_level_pressure = 1013.25  # You can calibrate this later
 
-def read_accel():
+def read_mpu_accel():
+    def read_word(reg):
+        high = bus.read_byte_data(MPU_ADDR, reg)
+        low = bus.read_byte_data(MPU_ADDR, reg+1)
+        value = (high << 8) + low
+        return value - 65536 if value > 32767 else value
+
     x = read_word(ACCEL_XOUT_H)
     y = read_word(ACCEL_XOUT_H + 2)
     z = read_word(ACCEL_XOUT_H + 4)
-    # convert to 'g' assuming ±2g scale
-    return [x / 16384.0, y / 16384.0, z / 16384.0]
+    return x, y, z
 
-# Read for 1.5 seconds
-samples = []
-start_time = time.time()
-while time.time() - start_time < 1.5:
-    accel = read_accel()
-    samples.append(accel)
-    time.sleep(0.01)  # ~100Hz
+def measure_throw(duration=1.5, interval=0.1):
+    accel_data = []
+    height_data = []
 
-# Calculate peak acceleration (magnitude)
-magnitudes = [math.sqrt(x**2 + y**2 + z**2) for x, y, z in samples]
-peak = max(magnitudes)
-avg = sum(magnitudes) / len(magnitudes)
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        x, y, z = read_mpu_accel()
+        ax = x / 16384.0
+        ay = y / 16384.0
+        az = z / 16384.0
+        net_accel = ((ax**2 + ay**2 + az**2) ** 0.5) - 1.0
+        accel_data.append(net_accel)
 
-# Estimate speed from crude integration (∫a dt)
-# Assuming Δt = 0.01s, speed ≈ sum(a * Δt)
-speed_est = sum([a * 0.01 for a in magnitudes]) * 9.81  # convert g to m/s²
+        try:
+            height = bme280.altitude
+            height_data.append(height)
+        except:
+            pass
 
-# Final output
-result = {
-    "id": f"throw-{int(time.time())}",
-    "strength": round(peak, 2),
-    "speed": round(speed_est, 2),
-    "accel": round(avg, 2),
-    "timestamp": datetime.now().isoformat()
-}
+        time.sleep(interval)
 
-print(json.dumps(result))
+    speed = sum(accel_data) * interval
+    strength = sum(abs(a) for a in accel_data)
+    avg_accel = sum(accel_data) / len(accel_data) if accel_data else 0
 
+    if height_data:
+        ground_level = height_data[0]
+        relative_height_m = max(height_data) - ground_level
+        relative_height_cm = round(relative_height_m * 100, 2)
+    else:
+        relative_height_cm = 0
+
+    return round(speed, 2), round(strength, 2), round(avg_accel, 2), relative_height_cm
+
+if __name__ == "__main__":
+    speed, strength, accel, max_height = measure_throw()
+
+    result = {
+        "id": f"throw-{int(time.time())}",
+        "strength": strength,
+        "speed": speed,
+        "accel": accel,
+        "max_height": max_height,  # in cm
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    print(json.dumps(result))
