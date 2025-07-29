@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blockchain Ball</title>
+  <style>
+    body {
+      background: #f0f0f0;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+    button {
+      padding: 15px 25px;
+      font-size: 18px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    .result-box {
+      background: white;
+      display: inline-block;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .result-box b {
+      display: inline-block;
+      width: 110px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏐 <strong>Blockchain Ball</strong></h1>
+
+  <div>
+    <button id="throw-btn">Start Throw</button>
+    <button id="upload-btn">Upload to AO</button>
+  </div>
+
+  <div id="status" class="result-box" style="display: none;">
+    <div><b>Throw ID:</b> <span id="id"></span></div>
+    <div><b>Speed:</b> <span id="speed"></span> m/s</div>
+    <div><b>Strength:</b> <span id="strength"></span> g</div>
+    <div><b>Avg Accel:</b> <span id="accel"></span> g</div>
+  </div>
+
+  <script>
+    const throwBtn = document.getElementById("throw-btn");
+    const uploadBtn = document.getElementById("upload-btn");
+    const statusBox = document.getElementById("status");
+
+    throwBtn.addEventListener("click", async () => {
+      throwBtn.disabled = true;
+      throwBtn.textContent = "Measuring...";
+
+      try {
+        const res = await fetch("/start-throw");
+        const data = await res.json();
+
+        document.getElementById("id").textContent = data.id;
+        document.getElementById("speed").textContent = data.speed;
+        document.getElementById("strength").textContent = data.strength;
+        document.getElementById("accel").textContent = data.accel;
+        statusBox.style.display = "inline-block";
+      } catch (err) {
+        alert("❌ Error measuring throw");
+        console.error(err);
+      }
+
+      throwBtn.disabled = false;
+      throwBtn.textContent = "Start Throw";
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "Uploading...";
+
+      try {
+        const res = await fetch("/upload-ao");
+        const msg = await res.text();
+        alert(msg);
+      } catch (err) {
+        alert("❌ Upload failed");
+        console.error(err);
+      }
+
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = "Upload to AO";
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@permaweb/aoconnect": "^0.0.85",
+    "express": "^5.1.0"
+  }
+}
