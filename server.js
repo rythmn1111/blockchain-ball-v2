@@ -3,6 +3,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { connect, createDataItemSigner } = require('@permaweb/aoconnect');
+const dns = require('dns').promises;
 
 const app = express();
 const PORT = 3000;
@@ -126,6 +127,31 @@ app.get('/upload-ao', async (req, res) => {
   } catch (err) {
     console.error('❌ Upload failed:', err);
     res.status(500).send('Upload to AO failed');
+  }
+});
+
+// API: Check WiFi status
+app.get('/wifi-status', async (req, res) => {
+  try {
+    // Check if we can reach the router/gateway (local network connectivity)
+    const { exec } = require('child_process');
+    
+    exec('ping -c 1 -W 2 $(ip route | grep default | awk \'{print $3}\')', (error, stdout, stderr) => {
+      if (error) {
+        // If ping fails, check if we have any network interface up
+        exec('ip addr show | grep "inet " | grep -v "127.0.0.1"', (error2, stdout2) => {
+          if (error2 || !stdout2.trim()) {
+            res.json({ status: 'offline', message: 'Ball out of WiFi range' });
+          } else {
+            res.json({ status: 'weak', message: 'Weak WiFi signal' });
+          }
+        });
+      } else {
+        res.json({ status: 'online', message: 'Connected to WiFi' });
+      }
+    });
+  } catch (err) {
+    res.json({ status: 'offline', message: 'Ball out of WiFi range' });
   }
 });
 

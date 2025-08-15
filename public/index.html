@@ -75,6 +75,43 @@
       color: #666;
       font-style: italic;
     }
+    .wifi-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+    }
+    .wifi-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .wifi-dot.online {
+      background-color: #28a745;
+    }
+    .wifi-dot.offline {
+      background-color: #dc3545;
+    }
+    .wifi-dot.weak {
+      background-color: #ffc107;
+    }
+    .wifi-dot.connecting {
+      background-color: #ffc107;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
     .modal {
       display: none;
       position: fixed;
@@ -121,6 +158,12 @@
 
   <h1>🏐 <strong>Blockchain Ball</strong></h1>
 
+  <!-- WiFi Status Indicator -->
+  <div id="wifi-status" class="wifi-status">
+    <div id="wifi-dot" class="wifi-dot connecting"></div>
+    <span id="wifi-text">Checking connection...</span>
+  </div>
+
   <div>
     <button id="throw-btn">Start Throw</button>
     <button id="upload-btn">Upload to AO</button>
@@ -166,6 +209,9 @@
     const playerNameInput = document.getElementById("playerNameInput");
     const startThrowBtn = document.getElementById("startThrowBtn");
     const cancelBtn = document.getElementById("cancelBtn");
+    const wifiStatus = document.getElementById("wifi-status");
+    const wifiDot = document.getElementById("wifi-dot");
+    const wifiText = document.getElementById("wifi-text");
 
     function showNamePrompt() {
       return new Promise((resolve, reject) => {
@@ -318,6 +364,31 @@
       refreshBtn.disabled = false;
       refreshBtn.textContent = "Refresh History";
     });
+
+    // WiFi status checking function
+    async function checkWiFiStatus() {
+      try {
+        const response = await fetch('/wifi-status');
+        const data = await response.json();
+        
+        wifiDot.className = `wifi-dot ${data.status}`;
+        
+        if (data.status === 'online') {
+          wifiText.textContent = '🟢 Ball Connected';
+        } else if (data.status === 'weak') {
+          wifiText.textContent = '🟡 Weak Signal';
+        } else {
+          wifiText.textContent = '🔴 Ball Out of Range';
+        }
+      } catch (err) {
+        wifiDot.className = 'wifi-dot offline';
+        wifiText.textContent = '🔴 Ball Out of Range';
+      }
+    }
+
+    // Check WiFi status every 30 seconds
+    checkWiFiStatus();
+    setInterval(checkWiFiStatus, 30000);
 
     // Load throws when page loads
     loadThrows();
