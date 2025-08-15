@@ -22,6 +22,7 @@ const ao = connect({
 async function sendToAO(throwData) {
   const lua = `table.insert(throws, {
     id = "${throwData.id}",
+    player = "${throwData.player || throwData.id}",
     speed = ${throwData.speed},
     strength = ${throwData.strength},
     accel = ${throwData.accel},
