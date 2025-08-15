@@ -47,6 +47,8 @@ app.use(express.static('public'));
 
 // API: Start a throw
 app.get('/start-throw', (req, res) => {
+  const playerName = req.query.player || 'Unknown';
+  
   exec('python3 throws.py', (err, stdout, stderr) => {
     if (err) {
       console.error('❌ Python Error:', err);
@@ -57,6 +59,10 @@ app.get('/start-throw', (req, res) => {
       console.log("🧪 Raw Python output:", stdout);
       const cleaned = stdout.trim().split('\n').filter(Boolean).pop();
       const throwResult = JSON.parse(cleaned);
+      
+      // Add player name to the throw result
+      throwResult.player = playerName;
+      
       console.log('📥 Throw result:', throwResult);
 
       // Read previous throws safely
