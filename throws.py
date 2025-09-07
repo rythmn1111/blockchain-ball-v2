@@ -4,7 +4,7 @@ import busio
 import json
 from datetime import datetime
 import smbus
-from adafruit_bme280 import basic as adafruit_bme280
+from adafruit_bmp280 import Adafruit_BMP280_I2C
 import os
 
 # === ID TRACKER SETUP ===
@@ -32,10 +32,10 @@ ACCEL_XOUT_H = 0x3B
 bus = smbus.SMBus(1)
 bus.write_byte_data(MPU_ADDR, PWR_MGMT_1, 0)
 
-# === BME280 SETUP ===
+# === BMP280 SETUP ===
 i2c_bmp = busio.I2C(board.SCL, board.SDA)
-bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c_bmp, address=0x76)
-bme280.sea_level_pressure = 1013.25  # Calibrate if needed
+bmp280 = Adafruit_BMP280_I2C(i2c_bmp, address=0x76)
+bmp280.sea_level_pressure = 1013.25  # Calibrate if needed
 
 def read_mpu_accel():
     def read_word(reg):
@@ -63,7 +63,7 @@ def measure_throw(duration=1.5, interval=0.1):
         accel_data.append(net_accel)
 
         try:
-            height = bme280.altitude
+            height = bmp280.altitude
             height_data.append(height)
         except:
             pass
